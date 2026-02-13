@@ -1,0 +1,26 @@
+{
+  "_comment": "Claude Code 配置模板 - 复制到 .claude/settings.local.json 并根据项目调整",
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm install:*)",
+      "Bash(npx *)",
+      "Bash(node:*)",
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "mcp__plugin_serena_serena__*"
+    ],
+    "_comment_allow": "根据项目需要添加更多权限，如 docker, pnpm, yarn, poetry 等"
+  },
+  "enabledPlugins": {
+    "superpowers@superpowers-marketplace": true,
+    "_comment": "根据需要添加其他插件，如 frontend-design"
+  }
+}

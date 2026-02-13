@@ -77,11 +77,19 @@ export class PlayerController {
     forward.normalize()
     right.normalize()
 
-    // 计算速度
+    // 计算水平速度
     this.velocity.set(0, 0, 0)
     this.velocity.add(forward.multiplyScalar(-this.direction.z))
     this.velocity.add(right.multiplyScalar(this.direction.x))
     this.velocity.multiplyScalar(this.moveSpeed * deltaTime)
+
+    // 垂直移动: 空格上升, Shift 下降
+    if (this.keys['Space']) {
+      this.velocity.y = this.moveSpeed * deltaTime
+    }
+    if (this.keys['ShiftLeft'] || this.keys['ShiftRight']) {
+      this.velocity.y = -this.moveSpeed * deltaTime
+    }
 
     // 应用移动
     this.camera.position.add(this.velocity)

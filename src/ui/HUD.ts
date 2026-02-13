@@ -45,7 +45,7 @@ export class HUD {
 
       <!-- 提示 -->
       <div id="instructions" class="instructions">
-        点击开始游戏 | WASD 移动 | 鼠标视角
+        点击开始 | WASD 移动 | 空格上升 | Shift 下降 | 鼠标视角
       </div>
     `
     document.body.appendChild(hudContainer)

@@ -1,0 +1,76 @@
+# Serena 项目配置模板
+# 复制此文件到 .serena/project.yml 并根据项目调整
+
+# ========================================
+# 必填配置
+# ========================================
+
+# 项目名称（必需）
+project_name: "your-project-name"
+
+# 编程语言列表（必需）
+# 常用选项: typescript, python, rust, go, java, cpp, javascript 等
+languages:
+- typescript
+
+# 文件编码（必需）
+encoding: "utf-8"
+
+# ========================================
+# 推荐配置
+# ========================================
+
+# 使用 .gitignore 忽略文件（推荐: true）
+ignore_all_files_in_gitignore: true
+
+# 只读模式（开发项目建议: false）
+read_only: false
+
+# 工具排除列表（推荐保持空，获得完整功能）
+excluded_tools: []
+
+# ========================================
+# 可选配置
+# ========================================
+
+# 额外忽略的路径（可选）
+ignored_paths: []
+
+# 包含的可选工具（一般不需要）
+included_optional_tools: []
+
+# 固定工具集（一般不使用）
+fixed_tools: []
+
+# 基础模式（可选，留空使用全局配置）
+base_modes:
+
+# 默认模式（可选，留空使用全局配置）
+default_modes:
+
+# ========================================
+# 初始提示（推荐配置）
+# ========================================
+# 格式: 项目简短描述，包括技术栈和关键注意事项
+# 示例: "TypeScript 项目，使用 Next.js 16 + Prisma。注意时区处理统一使用 UTC。"
+initial_prompt: ""
+
+# ========================================
+# 语言配置参考
+# ========================================
+#
+# TypeScript/JavaScript: typescript
+# Python: python 或 python_jedi
+# Rust: rust
+# Go: go
+# Java: java
+# C/C++: cpp
+# Ruby: ruby 或 ruby_solargraph
+# PHP: php
+# Dart: dart
+# Flutter: dart
+# Kotlin: kotlin
+# Swift: swift
+#
+# 完整列表见:
+# https://github.com/oraios/serena/blob/main/src/solidlsp/ls_config.py
