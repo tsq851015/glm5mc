@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { World } from '../world/World'
+import { Inventory } from './Inventory'
 
 export class PlayerController {
   private camera: THREE.PerspectiveCamera
@@ -15,10 +16,12 @@ export class PlayerController {
   private keys: { [key: string]: boolean } = {}
   private isLocked: boolean = false
   private euler: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ')
+  private inventory: Inventory
 
   constructor(camera: THREE.PerspectiveCamera, world: World) {
     this.camera = camera
     this.world = world
+    this.inventory = new Inventory()
     this.setupControls()
   }
 
@@ -26,6 +29,14 @@ export class PlayerController {
     // 键盘事件
     document.addEventListener('keydown', (e) => {
       this.keys[e.code] = true
+
+      // 数字键切换快捷栏槽位
+      if (e.code === 'Digit1') this.inventory.setSelectedSlot(0)
+      if (e.code === 'Digit2') this.inventory.setSelectedSlot(1)
+      if (e.code === 'Digit3') this.inventory.setSelectedSlot(2)
+      if (e.code === 'Digit4') this.inventory.setSelectedSlot(3)
+      if (e.code === 'Digit5') this.inventory.setSelectedSlot(4)
+      if (e.code === 'Digit6') this.inventory.setSelectedSlot(5)
     })
 
     document.addEventListener('keyup', (e) => {
@@ -54,8 +65,6 @@ export class PlayerController {
       this.camera.quaternion.setFromEuler(this.euler)
     })
   }
-
-  private playerRadius: number = 0.3
 
   update(deltaTime: number): void {
     if (!this.isLocked) return
@@ -184,5 +193,9 @@ export class PlayerController {
 
   getIsOnGround(): boolean {
     return this.isOnGround
+  }
+
+  getInventory(): Inventory {
+    return this.inventory
   }
 }

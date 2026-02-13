@@ -28,6 +28,10 @@ class UndergroundGame extends Game {
           this.hud.showInstructions()
           this.hud.setCrosshairVisible(false)
         }
+
+        // 更新快捷栏显示
+        this.hud.setHotbarItems(this.playerController.getInventory().getHotbar())
+        this.hud.setActiveSlot(this.playerController.getInventory().getSelectedSlot())
       }
     }
   }

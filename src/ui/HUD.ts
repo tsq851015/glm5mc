@@ -1,3 +1,5 @@
+import { InventoryItem } from '../player/Inventory'
+
 export class HUD {
   private healthFill: HTMLElement
   private hotbarSlots: HTMLElement[] = []
@@ -59,6 +61,20 @@ export class HUD {
   setActiveSlot(index: number): void {
     this.hotbarSlots.forEach((slot, i) => {
       slot.classList.toggle('active', i === index)
+    })
+  }
+
+  setHotbarItems(items: (InventoryItem | null)[]): void {
+    this.hotbarSlots.forEach((slot, i) => {
+      const item = items[i]
+      if (item) {
+        // 显示物品名称的前2个字符和数量
+        const shortName = item.name.substring(0, 2)
+        slot.innerHTML = `<span class="item-name">${shortName}</span><span class="item-count">${item.count}</span>`
+      } else {
+        // 空槽位显示数字
+        slot.innerHTML = `${i + 1}`
+      }
     })
   }
 
