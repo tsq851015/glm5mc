@@ -55,10 +55,12 @@ export class PlayerController {
     })
   }
 
+  private playerRadius: number = 0.3
+
   update(deltaTime: number): void {
     if (!this.isLocked) return
 
-    const position = this.camera.position
+    const position = this.camera.position.clone()
 
     // 获取移动方向
     const direction = new THREE.Vector3(0, 0, 0)
@@ -90,16 +92,29 @@ export class PlayerController {
     horizontalVelocity.add(right.multiplyScalar(direction.x))
     horizontalVelocity.multiplyScalar(this.moveSpeed * deltaTime)
 
-    // 应用水平移动
-    position.x += horizontalVelocity.x
-    position.z += horizontalVelocity.z
+    // 水平碰撞检测 - 分别检测 X 和 Z 方向
+    const newX = position.x + horizontalVelocity.x
+    const newZ = position.z + horizontalVelocity.z
+
+    // 检测 X 方向是否有碰撞
+    if (!this.checkHorizontalCollision(newX, position.y, position.z)) {
+      this.camera.position.x = newX
+    }
+
+    // 检测 Z 方向是否有碰撞
+    if (!this.checkHorizontalCollision(this.camera.position.x, position.y, newZ)) {
+      this.camera.position.z = newZ
+    }
+
+    // 更新位置引用
+    const currentPos = this.camera.position
 
     // 检测脚下是否有方块
-    const feetY = position.y - this.playerHeight
+    const feetY = currentPos.y - this.playerHeight
     const blockBelow = this.world.getBlock(
-      Math.floor(position.x),
+      Math.floor(currentPos.x),
       Math.floor(feetY),
-      Math.floor(position.z)
+      Math.floor(currentPos.z)
     )
 
     // 地面检测
@@ -111,7 +126,7 @@ export class PlayerController {
     } else {
       this.verticalVelocity = 0
       // 防止穿透地面
-      position.y = Math.floor(feetY) + 1 + this.playerHeight
+      currentPos.y = Math.floor(feetY) + 1 + this.playerHeight
     }
 
     // 跳跃 (只在地面时)
@@ -126,14 +141,33 @@ export class PlayerController {
     }
 
     // 应用垂直移动
-    position.y += this.verticalVelocity * deltaTime
+    currentPos.y += this.verticalVelocity * deltaTime
 
     // 防止掉出世界底部
-    if (position.y < 1) {
-      position.y = 1
+    if (currentPos.y < 1) {
+      currentPos.y = 1
       this.verticalVelocity = 0
       this.isOnGround = true
     }
+  }
+
+  // 检测水平方向碰撞
+  private checkHorizontalCollision(x: number, y: number, z: number): boolean {
+    const feetY = y - this.playerHeight
+
+    // 检测玩家身体范围内的多个高度点
+    for (let checkY = Math.floor(feetY); checkY <= Math.floor(y); checkY++) {
+      // 检测玩家周围的方块 (使用玩家半径)
+      const blockX = Math.floor(x)
+      const blockZ = Math.floor(z)
+
+      const block = this.world.getBlock(blockX, checkY, blockZ)
+      if (block !== 0 && block !== undefined) {
+        return true // 有碰撞
+      }
+    }
+
+    return false // 无碰撞
   }
 
   getPosition(): THREE.Vector3 {
