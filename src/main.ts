@@ -44,6 +44,13 @@ class UndergroundGame extends Game {
 const game = new UndergroundGame()
 game.start()
 
+// 生成世界 (先创建世界，用于碰撞检测)
+const world = new World(game.getScene())
+world.generateInitialChunks(1)
+
+// Expose world for debugging
+window.world = world
+
 // 设置玩家初始位置
 const camera = game.getCamera()
 camera.position.set(8, 25, 8)
@@ -52,16 +59,9 @@ camera.position.set(8, 25, 8)
 const hud = new HUD()
 game.setHUD(hud)
 
-// 创建玩家控制器
-const playerController = new PlayerController(camera)
+// 创建玩家控制器 (传入 world 用于碰撞检测)
+const playerController = new PlayerController(camera, world)
 game.setPlayerController(playerController)
 
-// 生成世界
-const world = new World(game.getScene())
-world.generateInitialChunks(1)
-
-// Expose world for debugging
-window.world = world
-
 console.log('Underground Explorer started!')
-console.log('Click to enable mouse control, WASD to move')
+console.log('WASD 移动 | 空格 跳跃 | Shift 快速下降')
