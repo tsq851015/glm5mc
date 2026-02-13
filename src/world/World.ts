@@ -3,6 +3,14 @@ import { createNoise2D, createNoise3D } from 'simplex-noise'
 import { Chunk } from './Chunk'
 import { BlockType, CHUNK_SIZE, CHUNK_HEIGHT } from './BlockType'
 
+// 深度层级配置
+interface LayerConfig {
+  minY: number
+  maxY: number
+  baseBlock: BlockType
+  ores?: { type: BlockType; chance: number }[]
+}
+
 export class World {
   private scene: THREE.Scene
   private chunks: Map<string, Chunk> = new Map()
@@ -10,11 +18,39 @@ export class World {
   private noise3D: ReturnType<typeof createNoise3D>
 
   // Noise parameters
-  private readonly heightNoiseScale = 0.05
   private readonly caveNoiseScale = 0.1
-  private readonly caveThreshold = 0.7
-  private readonly minTerrainHeight = 10
-  private readonly maxTerrainHeight = 20
+  private readonly caveThreshold = 0.6
+
+  // 深度层级配置
+  private readonly layers: LayerConfig[] = [
+    { minY: 0, maxY: 2, baseBlock: BlockType.BEDROCK },
+    {
+      minY: 2, maxY: 8,
+      baseBlock: BlockType.DEEP_STONE,
+      ores: [
+        { type: BlockType.GEM, chance: 0.005 },
+        { type: BlockType.IRON_ORE, chance: 0.02 },
+      ]
+    },
+    {
+      minY: 8, maxY: 15,
+      baseBlock: BlockType.DEEP_STONE,
+      ores: [
+        { type: BlockType.IRON_ORE, chance: 0.03 },
+        { type: BlockType.COPPER_ORE, chance: 0.04 },
+      ]
+    },
+    {
+      minY: 15, maxY: 22,
+      baseBlock: BlockType.STONE,
+      ores: [
+        { type: BlockType.IRON_ORE, chance: 0.02 },
+        { type: BlockType.COPPER_ORE, chance: 0.05 },
+      ]
+    },
+    { minY: 22, maxY: 28, baseBlock: BlockType.GRAVEL },
+    { minY: 28, maxY: 32, baseBlock: BlockType.DIRT },
+  ]
 
   constructor(scene: THREE.Scene) {
     this.scene = scene
@@ -48,18 +84,7 @@ export class World {
         const worldX = chunkX * CHUNK_SIZE + x
         const worldZ = chunkZ * CHUNK_SIZE + z
 
-        // Get terrain height using 2D noise
-        const heightNoise = this.noise2D(
-          worldX * this.heightNoiseScale,
-          worldZ * this.heightNoiseScale
-        )
-        // Normalize noise from [-1, 1] to [0, 1]
-        const normalizedNoise = (heightNoise + 1) / 2
-        const terrainHeight = Math.floor(
-          this.minTerrainHeight + normalizedNoise * (this.maxTerrainHeight - this.minTerrainHeight)
-        )
-
-        // Fill blocks from bottom to terrain height
+        // Fill blocks from bottom to top using layered terrain
         for (let y = 0; y < CHUNK_HEIGHT; y++) {
           // Check for caves using 3D noise
           const caveNoise = this.noise3D(
@@ -68,29 +93,30 @@ export class World {
             worldZ * this.caveNoiseScale
           )
 
-          // Determine block type based on depth
-          let blockType: BlockType
-
-          if (y > terrainHeight) {
-            // Above terrain - air
-            blockType = BlockType.AIR
-          } else if (y === terrainHeight) {
-            // Surface layer - dirt
-            blockType = BlockType.DIRT
-          } else if (y < terrainHeight - 10) {
-            // Deep stone layer
-            blockType = BlockType.DEEP_STONE
-          } else if (y < terrainHeight - 5) {
-            // Stone layer with potential ores
-            blockType = this.generateOre(worldX, y, worldZ)
-          } else {
-            // Regular stone layer
-            blockType = BlockType.STONE
+          // Apply cave generation (carve out caves) - don't carve bedrock
+          if (caveNoise > this.caveThreshold && y > 2) {
+            chunk.setBlock(x, y, z, BlockType.AIR)
+            continue
           }
 
-          // Apply cave generation (carve out caves)
-          if (caveNoise > this.caveThreshold && y < terrainHeight && y > 0) {
-            blockType = BlockType.AIR
+          // 根据层级确定方块
+          let blockType = BlockType.AIR
+          for (const layer of this.layers) {
+            if (y >= layer.minY && y < layer.maxY) {
+              blockType = layer.baseBlock
+
+              // 矿石生成
+              if (layer.ores) {
+                const oreNoise = this.noise2D(worldX * 0.5 + y, worldZ * 0.5 + y)
+                for (const ore of layer.ores) {
+                  if (oreNoise > (1 - ore.chance * 10)) {
+                    blockType = ore.type
+                    break
+                  }
+                }
+              }
+              break
+            }
           }
 
           chunk.setBlock(x, y, z, blockType)
@@ -103,20 +129,6 @@ export class World {
 
     this.chunks.set(key, chunk)
     return chunk
-  }
-
-  private generateOre(x: number, y: number, z: number): BlockType {
-    // Use position-based random seed for consistent ore generation
-    const seed = x * 73856093 + y * 19349663 + z * 83492791
-    const random = (Math.sin(seed) * 43758.5453) % 1
-
-    // Ore distribution probabilities
-    if (random < 0.02) {
-      return BlockType.COPPER_ORE
-    } else if (random < 0.035) {
-      return BlockType.IRON_ORE
-    }
-    return BlockType.STONE
   }
 
   getChunk(chunkX: number, chunkZ: number): Chunk | undefined {
