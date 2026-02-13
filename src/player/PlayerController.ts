@@ -3,6 +3,8 @@ import { World } from '../world/World'
 import { Inventory, InventoryItem } from './Inventory'
 import { BlockInteraction } from './BlockInteraction'
 import { BlockType, BLOCK_DEFINITIONS } from '../world/BlockType'
+import { Weapon, WeaponType } from '../combat/Weapon'
+import { CombatSystem } from '../combat/CombatSystem'
 
 export class PlayerController {
   private camera: THREE.PerspectiveCamera
@@ -20,12 +22,22 @@ export class PlayerController {
   private euler: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ')
   private inventory: Inventory
   private blockInteraction: BlockInteraction
+  private weapons: Map<WeaponType, Weapon>
+  private combatSystem: CombatSystem
 
   constructor(camera: THREE.PerspectiveCamera, world: World, scene: THREE.Scene) {
     this.camera = camera
     this.world = world
     this.inventory = new Inventory()
     this.blockInteraction = new BlockInteraction(camera, world, scene)
+
+    // 初始化武器系统
+    this.weapons = new Map()
+    this.weapons.set(WeaponType.PICKAXE, new Weapon(WeaponType.PICKAXE))
+    this.weapons.set(WeaponType.SWORD, new Weapon(WeaponType.SWORD))
+    this.weapons.set(WeaponType.BOW, new Weapon(WeaponType.BOW))
+    this.combatSystem = new CombatSystem(camera, scene)
+
     this.setupControls()
   }
 
@@ -74,8 +86,15 @@ export class PlayerController {
       if (!this.isLocked) return
 
       if (e.button === 0) {
-        // 左键 - 挖掘方块
-        this.handleBlockBreak()
+        // 左键 - 检查是否为武器/工具攻击或挖掘方块
+        const selectedItem = this.inventory.getSelectedItem()
+        if (selectedItem && (selectedItem.type === 'weapon' || selectedItem.type === 'tool')) {
+          // 武器或工具 - 执行攻击
+          this.handleAttack(selectedItem)
+        } else {
+          // 方块或空 - 挖掘方块
+          this.handleBlockBreak()
+        }
       } else if (e.button === 2) {
         // 右键 - 放置方块
         this.handleBlockPlace()
@@ -101,6 +120,18 @@ export class PlayerController {
         blockType: brokenBlock
       }
       this.inventory.addItem(item)
+    }
+  }
+
+  private handleAttack(selectedItem: InventoryItem): void {
+    const weapon = this.weapons.get(selectedItem.id as WeaponType)
+    const currentTime = performance.now() / 1000
+
+    if (weapon && weapon.canAttack(currentTime)) {
+      const result = this.combatSystem.performAttack(weapon)
+      if (result.position) {
+        this.combatSystem.createAttackEffect(result.position, weapon.getStats().range)
+      }
     }
   }
 
