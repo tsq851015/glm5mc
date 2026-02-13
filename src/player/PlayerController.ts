@@ -1,6 +1,8 @@
 import * as THREE from 'three'
 import { World } from '../world/World'
-import { Inventory } from './Inventory'
+import { Inventory, InventoryItem } from './Inventory'
+import { BlockInteraction } from './BlockInteraction'
+import { BlockType, BLOCK_DEFINITIONS } from '../world/BlockType'
 
 export class PlayerController {
   private camera: THREE.PerspectiveCamera
@@ -17,11 +19,13 @@ export class PlayerController {
   private isLocked: boolean = false
   private euler: THREE.Euler = new THREE.Euler(0, 0, 0, 'YXZ')
   private inventory: Inventory
+  private blockInteraction: BlockInteraction
 
-  constructor(camera: THREE.PerspectiveCamera, world: World) {
+  constructor(camera: THREE.PerspectiveCamera, world: World, scene: THREE.Scene) {
     this.camera = camera
     this.world = world
     this.inventory = new Inventory()
+    this.blockInteraction = new BlockInteraction(camera, world, scene)
     this.setupControls()
   }
 
@@ -64,10 +68,57 @@ export class PlayerController {
       this.euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, this.euler.x))
       this.camera.quaternion.setFromEuler(this.euler)
     })
+
+    // 鼠标点击 - 挖掘和放置方块
+    document.addEventListener('mousedown', (e) => {
+      if (!this.isLocked) return
+
+      if (e.button === 0) {
+        // 左键 - 挖掘方块
+        this.handleBlockBreak()
+      } else if (e.button === 2) {
+        // 右键 - 放置方块
+        this.handleBlockPlace()
+      }
+    })
+
+    // 防止右键菜单
+    document.addEventListener('contextmenu', (e) => {
+      e.preventDefault()
+    })
+  }
+
+  private handleBlockBreak(): void {
+    const brokenBlock = this.blockInteraction.breakBlock()
+    if (brokenBlock !== null && brokenBlock !== BlockType.AIR) {
+      // 将挖掘的方块添加到背包
+      const blockName = this.getBlockName(brokenBlock)
+      const item: InventoryItem = {
+        type: 'block',
+        id: blockName.toLowerCase().replace(' ', '_'),
+        name: blockName,
+        count: 1,
+        blockType: brokenBlock
+      }
+      this.inventory.addItem(item)
+    }
+  }
+
+  private handleBlockPlace(): void {
+    const selectedItem = this.inventory.getSelectedItem()
+    if (selectedItem && selectedItem.type === 'block' && selectedItem.blockType !== undefined) {
+      const placed = this.blockInteraction.placeBlock(selectedItem.blockType)
+      if (placed) {
+        this.inventory.decreaseSelectedItem(1)
+      }
+    }
   }
 
   update(deltaTime: number): void {
     if (!this.isLocked) return
+
+    // 更新方块高亮
+    this.blockInteraction.updateHighlight()
 
     const position = this.camera.position.clone()
 
@@ -197,5 +248,13 @@ export class PlayerController {
 
   getInventory(): Inventory {
     return this.inventory
+  }
+
+  getBlockInteraction(): BlockInteraction {
+    return this.blockInteraction
+  }
+
+  getBlockName(blockType: BlockType): string {
+    return BLOCK_DEFINITIONS[blockType]?.name || 'Unknown'
   }
 }

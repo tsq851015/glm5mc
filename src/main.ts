@@ -63,8 +63,8 @@ camera.position.set(8, 25, 8)
 const hud = new HUD()
 game.setHUD(hud)
 
-// 创建玩家控制器 (传入 world 用于碰撞检测)
-const playerController = new PlayerController(camera, world)
+// 创建玩家控制器 (传入 world 和 scene 用于碰撞检测和方块交互)
+const playerController = new PlayerController(camera, world, game.getScene())
 game.setPlayerController(playerController)
 
 console.log('Underground Explorer started!')
