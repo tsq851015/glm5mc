@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { Weapon } from './Weapon'
+import { Enemy } from '../enemies/Enemy'
 
 export interface AttackResult {
   hit: boolean
@@ -16,7 +17,7 @@ export class CombatSystem {
     this.scene = scene
   }
 
-  performAttack(weapon: Weapon): AttackResult {
+  performAttack(weapon: Weapon, enemies: Enemy[]): AttackResult {
     const stats = weapon.getStats()
     const damage = weapon.attack(performance.now() / 1000)
 
@@ -28,7 +29,38 @@ export class CombatSystem {
       direction.multiplyScalar(stats.range * 0.5)
     )
 
-    // TODO: 敌人碰撞检测 (Phase 4)
+    // 检测敌人碰撞
+    let hitEnemy: Enemy | null = null
+    let minDistance = stats.range
+
+    for (const enemy of enemies) {
+      if (!enemy.isAlive()) continue
+
+      const distance = this.camera.position.distanceTo(enemy.getPosition())
+      if (distance < minDistance) {
+        // 检查敌人是否在前方 (点积）
+        const toEnemy = new THREE.Vector3()
+          .subVectors(enemy.getPosition(), this.camera.position)
+          .normalize()
+
+        const dot = direction.dot(toEnemy)
+        if (dot > 0.5) { // 在约60度圆锥内
+          minDistance = distance
+          hitEnemy = enemy
+        }
+      }
+    }
+
+    if (hitEnemy) {
+      hitEnemy.takeDamage(damage)
+      this.createAttackEffect(hitEnemy.getPosition(), stats.range)
+
+      return {
+        hit: true,
+        damage: damage,
+        position: hitEnemy.getPosition()
+      }
+    }
 
     return {
       hit: false,
