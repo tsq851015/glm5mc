@@ -12,7 +12,7 @@ class PathfindingAI implements EnemyAI {
       .subVectors(playerPosition, enemyPosition)
       .normalize()
 
-    // Check if stuck (not moving)
+    // Simple obstacle detection - check if we're stuck
     const distance = enemyPosition.distanceTo(this.lastPosition)
     if (distance < 0.01) {
       this.stuckCounter++
@@ -21,11 +21,20 @@ class PathfindingAI implements EnemyAI {
     }
     this.lastPosition.copy(enemyPosition)
 
-    // If stuck, try strafing
+    // If stuck, try different directions
     if (this.stuckCounter > 10) {
-      // Try perpendicular direction
-      direction.cross(new THREE.Vector3(0, 1, 0)).normalize()
-      this.stuckCounter = 0
+      // Try left, right, then jump combinations
+      const tryDirections = [
+        new THREE.Vector3(direction.z, 0, -direction.x), // Perpendicular left
+        new THREE.Vector3(-direction.z, 0, direction.x), // Perpendicular right
+        new THREE.Vector3(direction.x, 1, direction.z).normalize(), // Try jumping
+        new THREE.Vector3(-direction.x, 0, -direction.z) // Reverse
+      ]
+
+      for (const tryDir of tryDirections) {
+        this.stuckCounter = 0
+        return tryDir
+      }
     }
 
     return direction
