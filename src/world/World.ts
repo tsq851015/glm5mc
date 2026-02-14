@@ -11,6 +11,16 @@ interface LayerConfig {
   ores?: { type: BlockType; chance: number }[]
 }
 
+
+  private onDirty?: () => void
+
+  constructor(scene: THREE.Scene, onDirty?: () => void) {
+    this.scene = scene
+    this.onDirty = onDirty
+    this.noise2D = createNoise2D()
+    this.noise3D = createNoise3D()
+  }
+
 export class World {
   private scene: THREE.Scene
   private chunks: Map<string, Chunk> = new Map()
@@ -155,41 +165,42 @@ export class World {
   }
 
   setBlock(worldX: number, worldY: number, worldZ: number, type: BlockType): void {
-    if (worldY < 0 || worldY >= CHUNK_HEIGHT) {
-      return
-    }
-
-    const chunkX = Math.floor(worldX / CHUNK_SIZE)
-    const chunkZ = Math.floor(worldZ / CHUNK_SIZE)
-    const localX = ((worldX % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
-    const localZ = ((worldZ % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
-
-    const chunk = this.getChunk(chunkX, chunkZ)
-    if (!chunk) {
-      return
-    }
-
-    // Get original block before modification
-    const originalBlock = chunk.getBlock(localX, worldY, localZ)
-
-    // Track modification if different from original
-    const key = `${worldX},${worldY},${worldZ}`
-    if (type !== originalBlock) {
-      this.modifiedBlocks.set(key, type)
-    } else {
-      // Remove from tracking if restored to original
-      this.modifiedBlocks.delete(key)
-    }
-
-    chunk.setBlock(localX, worldY, localZ, type)
-    chunk.generateMesh(this.scene)
-
-    // Update neighboring chunks if block is on edge
-    if (localX === 0) this.regenerateChunk(chunkX - 1, chunkZ)
-    if (localX === CHUNK_SIZE - 1) this.regenerateChunk(chunkX + 1, chunkZ)
-    if (localZ === 0) this.regenerateChunk(chunkX, chunkZ - 1)
-    if (localZ === CHUNK_SIZE - 1) this.regenerateChunk(chunkX, chunkZ + 1)
+  if (worldY < 0 || worldY >= CHUNK_HEIGHT) {
+    return
   }
+
+  const chunkX = Math.floor(worldX / CHUNK_SIZE)
+  const chunkZ = Math.floor(worldZ / CHUNK_SIZE)
+  const localX = ((worldX % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
+  const localZ = ((worldZ % CHUNK_SIZE) + CHUNK_SIZE) % CHUNK_SIZE
+
+  const chunk = this.getChunk(chunkX, chunkZ)
+  if (!chunk) {
+    return
+  }
+
+  // Get original block before modification
+  const originalBlock = chunk.getBlock(localX, worldY, localZ)
+
+  // Track modification if different from original
+  const key = `${worldX},${worldY},${worldZ}`
+  if (type !== originalBlock) {
+    this.modifiedBlocks.set(key, type)
+    this.onDirty?.()
+  } else {
+    // Remove from tracking if restored to original
+    this.modifiedBlocks.delete(key)
+  }
+
+  chunk.setBlock(localX, worldY, localZ, type)
+  chunk.generateMesh(this.scene)
+
+  // Update neighboring chunks if block is on edge
+  if (localX === 0) this.regenerateChunk(chunkX - 1, chunkZ)
+  if (localX === CHUNK_SIZE - 1) this.regenerateChunk(chunkX + 1, chunkZ)
+  if (localZ === 0) this.regenerateChunk(chunkX, chunkZ - 1)
+  if (localZ === CHUNK_SIZE - 1) this.regenerateChunk(chunkX, chunkZ + 1)
+}
 
   private regenerateChunk(chunkX: number, chunkZ: number): void {
     const chunk = this.getChunk(chunkX, chunkZ)

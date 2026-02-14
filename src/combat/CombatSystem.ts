@@ -106,41 +106,49 @@ export class CombatSystem {
     animate()
   }
 
-  showDamageNumber(_position: THREE.Vector3, damage: number): void {
-    const element = document.createElement('div')
-    element.textContent = `-${damage}`
-    element.style.cssText = `
-      position: absolute;
-      color: #ff4444;
-      font-weight: bold;
-      font-size: 18px;
-      pointer-events: none;
-      text-shadow: 1px 1px 2px black;
-    `
+  showDamageNumber(position: THREE.Vector3, damage: number): void {
+  const element = document.createElement('div')
+  element.textContent = `-${damage}`
+  element.style.cssText = `
+    position: absolute;
+    color: #ff4444;
+    font-weight: bold;
+    font-size: 18px;
+    pointer-events: none;
+    text-shadow: 1px 1px 2px black;
+    z-index: 1000;
+  `
 
-    // Convert 3D position to screen coordinates
-    // TODO: Implement projection in next task
+  // 投影 3D 位置到 2D 屏幕坐标
+  const vector = position.clone()
+  vector.project(this.camera)
 
-    document.body.appendChild(element)
+  const x = (vector.x * 0.5 + 0.5) * window.innerWidth
+  const y = (-(vector.y * 0.5) + 0.5) * window.innerHeight
 
-    // Animate floating up and fade out
-    let opacity = 1.0
-    let offsetY = 0
-    const animate = () => {
-      opacity -= 0.02
-      offsetY += 1
+  element.style.left = `${x}px`
+  element.style.top = `${y}px`
 
-      if (element.style) {
-        element.style.opacity = opacity.toString()
-        element.style.transform = `translateY(${-offsetY}px)`
-      }
+  document.body.appendChild(element)
 
-      if (opacity > 0) {
-        requestAnimationFrame(animate)
-      } else {
-        document.body.removeChild(element)
-      }
+  // 动画浮起并淡出
+  let opacity = 1.0
+  let offsetY = 0
+  const animate = () => {
+    opacity -= 0.02
+    offsetY += 1
+
+    if (element.style) {
+      element.style.opacity = opacity.toString()
+      element.style.top = `${y - offsetY}px`
     }
-    requestAnimationFrame(animate)
+
+    if (opacity > 0) {
+      requestAnimationFrame(animate)
+    } else {
+      document.body.removeChild(element)
+    }
   }
+  requestAnimationFrame(animate)
+}
 }

@@ -10,8 +10,8 @@ export class Game {
   private renderer: THREE.WebGLRenderer
   private time: Time
   private isRunning: boolean = false
-  private saveManager: SaveManager
-  private autoSave: AutoSave
+  protected saveManager: SaveManager
+  protected autoSave: AutoSave
 
   constructor() {
     // 初始化场景
@@ -45,6 +45,17 @@ export class Game {
       console.log('Save system initialized')
     }).catch(err => {
       console.error('Failed to initialize save system:', err)
+    })
+
+    // 添加 F5 手动保存
+    window.addEventListener('keydown', async (e) => {
+      if (e.code === 'F5') {
+        e.preventDefault()
+        const success = await this.saveGame(1) // 保存到槽位 1
+        if (success) {
+          console.log('Game manually saved to slot 1')
+        }
+      }
     })
 
     // 设置灯光
@@ -93,59 +104,14 @@ export class Game {
   }
 
   async saveGame(slot: number = 0): Promise<boolean> {
-    const playerPos = this.camera.position
-
-    // Gather save data from all systems
-    const playerData: PlayerSaveData = {
-      position: {
-        x: playerPos.x,
-        y: playerPos.y,
-        z: playerPos.z
-      },
-      health: 100, // Will get from PlayerController when integrated
-      inventory: [] // Will get from Inventory when integrated
-    }
-
-    const modifiedBlocks: ModifiedBlock[] = []
-    // TODO: Get from World.getModifiedBlocks()
-
-    const saveData: SaveData = {
-      version: '1.0',
-      timestamp: Date.now(),
-      player: playerData,
-      modifiedBlocks: modifiedBlocks
-    }
-
-    const success = await this.autoSave.save(slot, saveData)
-    if (success) {
-      console.log(`Game saved to slot ${slot}`)
-    } else {
-      console.error('Failed to save game')
-    }
-
-    return success
+    console.log('saveGame called - override in subclass')
+    return false
   }
 
   async loadGame(slot: number = 0): Promise<boolean> {
-    const saveData = await this.autoSave.load(slot)
-
-    if (!saveData) {
-      console.log(`No save found in slot ${slot}`)
-      return false
-    }
-
-    // Validate version
-    if (saveData.version !== '1.0') {
-      console.error(`Incompatible save version: ${saveData.version}`)
-      return false
-    }
-
-    // Restore player position
-    this.camera.position.set(
-      saveData.player.position.x,
-      saveData.player.position.y,
-      saveData.player.position.z
-    )
+    console.log('loadGame called - override in subclass')
+    return false
+  }
 
     // Restore blocks
     // TODO: Apply modifiedBlocks to World
@@ -166,6 +132,10 @@ export class Game {
 
   protected render(): void {
     this.renderer.render(this.scene, this.camera)
+  }
+
+  markDirty(): void {
+    this.autoSave.markDirty()
   }
 
   stop(): void {

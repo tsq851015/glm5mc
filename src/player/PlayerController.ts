@@ -26,10 +26,14 @@ export class PlayerController {
   private combatSystem: CombatSystem
   private maxHealth: number = 100
   private currentHealth: number = 100
+  private onDirty?: () => void
+  private getEnemies?: () => any[]
 
-  constructor(camera: THREE.PerspectiveCamera, world: World, scene: THREE.Scene) {
+  constructor(camera: THREE.PerspectiveCamera, world: World, scene: THREE.Scene, onDirty?: () => void, getEnemies?: () => any[]) {
     this.camera = camera
     this.world = world
+    this.onDirty = onDirty
+    this.getEnemies = getEnemies
     this.inventory = new Inventory()
     this.blockInteraction = new BlockInteraction(camera, world, scene)
 
@@ -110,42 +114,49 @@ export class PlayerController {
   }
 
   private handleBlockBreak(): void {
-    const brokenBlock = this.blockInteraction.breakBlock()
-    if (brokenBlock !== null && brokenBlock !== BlockType.AIR) {
-      // 将挖掘的方块添加到背包
-      const blockName = this.getBlockName(brokenBlock)
-      const item: InventoryItem = {
-        type: 'block',
-        id: blockName.toLowerCase().replace(' ', '_'),
-        name: blockName,
-        count: 1,
-        blockType: brokenBlock
-      }
-      this.inventory.addItem(item)
+  const brokenBlock = this.blockInteraction.breakBlock()
+  if (brokenBlock !== null && brokenBlock !== BlockType.AIR) {
+    // 将挖掘的方块添加到背包
+    const blockName = this.getBlockName(brokenBlock)
+    const item: InventoryItem = {
+      type: 'block',
+      id: blockName.toLowerCase().replace(' ', '_'),
+      name: blockName,
+      count: 1,
+      blockType: brokenBlock
     }
+    this.inventory.addItem(item)
+    this.onDirty?.()
   }
+}
 
   private handleAttack(selectedItem: InventoryItem): void {
-    const weapon = this.weapons.get(selectedItem.id as WeaponType)
-    const currentTime = performance.now() / 1000
+  const weapon = this.weapons.get(selectedItem.id as WeaponType)
+  const currentTime = performance.now() / 1000
 
-    if (weapon && weapon.canAttack(currentTime)) {
-      const result = this.combatSystem.performAttack(weapon)
-      if (result.position) {
-        this.combatSystem.createAttackEffect(result.position, weapon.getStats().range)
+  if (weapon && weapon.canAttack(currentTime)) {
+    const enemies = this.getEnemies ? this.getEnemies() : []
+    const result = this.combatSystem.performAttack(weapon, enemies)
+    if (result.hit && result.position) {
+      this.combatSystem.createAttackEffect(result.position, weapon.getStats().range)
+      // 显示伤害数字
+      if (result.damage > 0) {
+        this.combatSystem.showDamageNumber(result.position, result.damage)
       }
     }
   }
+}
 
   private handleBlockPlace(): void {
-    const selectedItem = this.inventory.getSelectedItem()
-    if (selectedItem && selectedItem.type === 'block' && selectedItem.blockType !== undefined) {
-      const placed = this.blockInteraction.placeBlock(selectedItem.blockType)
-      if (placed) {
-        this.inventory.decreaseSelectedItem(1)
-      }
+  const selectedItem = this.inventory.getSelectedItem()
+  if (selectedItem && selectedItem.type === 'block' && selectedItem.blockType !== undefined) {
+    const placed = this.blockInteraction.placeBlock(selectedItem.blockType)
+    if (placed) {
+      this.inventory.decreaseSelectedItem(1)
+      this.onDirty?.()
     }
   }
+}
 
   update(deltaTime: number): void {
     if (!this.isLocked) return
@@ -245,9 +256,10 @@ export class PlayerController {
   }
 
   takeDamage(damage: number): void {
-    this.currentHealth = Math.max(0, this.currentHealth - damage)
-    console.log(`Player took ${damage} damage. Health: ${this.currentHealth}/${this.maxHealth}`)
-  }
+  this.currentHealth = Math.max(0, this.currentHealth - damage)
+  console.log(`Player took ${damage} damage. Health: ${this.currentHealth}/${this.maxHealth}`)
+  this.onDirty?.()
+}
 
   heal(amount: number): void {
     this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount)

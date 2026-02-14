@@ -1,6 +1,20 @@
 import * as THREE from 'three'
 import { EntityType, EntityStats } from '../entities/EntityType'
 
+// Lazy imports to avoid circular dependency
+const getEnemyClass = (type: EntityType) => {
+  switch (type) {
+    case EntityType.SLIME:
+      return require('./Slime').Slime
+    case EntityType.BAT:
+      return require('./Bat').Bat
+    case EntityType.SKELETON:
+      return require('./Skeleton').Skeleton
+    default:
+      return Enemy
+  }
+}
+
 export interface EnemySaveData {
   type: string
   position: { x: number, y: number, z: number }
@@ -22,12 +36,7 @@ export class Enemy {
 
   constructor(type: EntityType, position: THREE.Vector3, scene: THREE.Scene) {
     this.type = type
-    this.stats = (window as any).ENTITY_STATS ? (window as any).ENTITY_STATS[type] : {
-      maxHealth: 15,
-      damage: 3,
-      moveSpeed: 2.5,
-      attackRange: 1.5
-    }
+    this.stats = ENTITY_STATS[type]
     this.health = this.stats.maxHealth
     this.position = position.clone()
 
@@ -164,8 +173,9 @@ export class Enemy {
     const type = data.type as EntityType
     const position = new THREE.Vector3(data.position.x, data.position.y, data.position.z)
 
-    // Will be replaced with proper factory in later tasks
-    const enemy = new Enemy(type, position, scene)
+    const EnemyClass = getEnemyClass(type)
+    const enemy = new EnemyClass(position, scene)
+
     enemy.health = data.health
     enemy.isDead = data.isDead
 
