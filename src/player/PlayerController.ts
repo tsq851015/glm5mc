@@ -24,6 +24,8 @@ export class PlayerController {
   private blockInteraction: BlockInteraction
   private weapons: Map<WeaponType, Weapon>
   private combatSystem: CombatSystem
+  private maxHealth: number = 100
+  private currentHealth: number = 100
 
   constructor(camera: THREE.PerspectiveCamera, world: World, scene: THREE.Scene) {
     this.camera = camera
@@ -240,6 +242,27 @@ export class PlayerController {
       this.verticalVelocity = 0
       this.isOnGround = true
     }
+  }
+
+  takeDamage(damage: number): void {
+    this.currentHealth = Math.max(0, this.currentHealth - damage)
+    console.log(`Player took ${damage} damage. Health: ${this.currentHealth}/${this.maxHealth}`)
+  }
+
+  heal(amount: number): void {
+    this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount)
+  }
+
+  getHealth(): number {
+    return this.currentHealth
+  }
+
+  getMaxHealth(): number {
+    return this.maxHealth
+  }
+
+  isAlive(): boolean {
+    return this.currentHealth > 0
   }
 
   // 检测水平方向碰撞
