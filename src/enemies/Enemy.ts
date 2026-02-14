@@ -50,7 +50,7 @@ export class Enemy {
     }
   }
 
-  update(deltaTime: number, playerPosition: THREE.Vector3): void {
+  update(_deltaTime: number, _playerPosition: THREE.Vector3): void {
     if (this.isDead) return
 
     // AI will be implemented in subclasses

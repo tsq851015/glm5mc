@@ -12,7 +12,6 @@ export class Game {
   private isRunning: boolean = false
   private saveManager: SaveManager
   private autoSave: AutoSave
-  private isSaveLoaded: boolean = false
 
   constructor() {
     // 初始化场景
@@ -151,7 +150,6 @@ export class Game {
     // Restore blocks
     // TODO: Apply modifiedBlocks to World
 
-    this.isSaveLoaded = true
     console.log(`Game loaded from slot ${slot}`)
     return true
   }

@@ -1,4 +1,4 @@
-import { SaveData, SAVE_VERSION } from './SaveData'
+import { SaveData } from './SaveData'
 
 const DB_NAME = 'UndergroundExplorerDB'
 const STORE_NAME = 'saves'
@@ -22,6 +22,7 @@ export class SaveManager {
 
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result
+        if (!db) return
 
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'slot' })
@@ -38,6 +39,10 @@ export class SaveManager {
     }
 
     return new Promise((resolve) => {
+      if (!this.db) {
+        resolve(false)
+        return
+      }
       const transaction = this.db.transaction([STORE_NAME], 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
 
@@ -62,6 +67,10 @@ export class SaveManager {
     }
 
     return new Promise((resolve) => {
+      if (!this.db) {
+        resolve(null)
+        return
+      }
       const transaction = this.db.transaction([STORE_NAME], 'readonly')
       const store = transaction.objectStore(STORE_NAME)
       const request = store.get(slot)
@@ -89,6 +98,10 @@ export class SaveManager {
     }
 
     return new Promise((resolve) => {
+      if (!this.db) {
+        resolve([])
+        return
+      }
       const transaction = this.db.transaction([STORE_NAME], 'readonly')
       const store = transaction.objectStore(STORE_NAME)
       const request = store.getAllKeys()
@@ -111,6 +124,10 @@ export class SaveManager {
     }
 
     return new Promise((resolve) => {
+      if (!this.db) {
+        resolve(false)
+        return
+      }
       const transaction = this.db.transaction([STORE_NAME], 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
       const request = store.delete(slot)

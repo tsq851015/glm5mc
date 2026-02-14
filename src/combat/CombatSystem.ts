@@ -17,7 +17,7 @@ export class CombatSystem {
     this.scene = scene
   }
 
-  performAttack(weapon: Weapon, enemies: Enemy[]): AttackResult {
+  performAttack(weapon: Weapon, enemies: Enemy[] = []): AttackResult {
     const stats = weapon.getStats()
     const damage = weapon.attack(performance.now() / 1000)
 
@@ -106,7 +106,7 @@ export class CombatSystem {
     animate()
   }
 
-  showDamageNumber(position: THREE.Vector3, damage: number): void {
+  showDamageNumber(_position: THREE.Vector3, damage: number): void {
     const element = document.createElement('div')
     element.textContent = `-${damage}`
     element.style.cssText = `

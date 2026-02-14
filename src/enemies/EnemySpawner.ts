@@ -20,7 +20,6 @@ export class EnemySpawner {
   private scene: THREE.Scene
   private getBlock: (x: number, y: number, z: number) => BlockType
   private lastSpawnCheck: number = 0
-  private spawnCooldown: number = 60000 // 60 seconds
 
   private spawnConfigs: SpawnConfig[] = [
     {

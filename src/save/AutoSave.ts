@@ -1,5 +1,5 @@
 import { SaveManager } from './SaveManager'
-import { SaveData, SAVE_VERSION } from './SaveData'
+import { SaveData } from './SaveData'
 
 export class AutoSave {
   private saveManager: SaveManager
