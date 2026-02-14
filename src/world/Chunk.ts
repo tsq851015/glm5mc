@@ -161,7 +161,7 @@ export class Chunk {
     // Create material
     const material = new THREE.MeshLambertMaterial({
       vertexColors: true,
-      side: THREE.FrontSide,
+      side: THREE.DoubleSide,
     })
 
     // Create mesh

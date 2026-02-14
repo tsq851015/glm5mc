@@ -29,4 +29,4 @@ export const BLOCK_DEFINITIONS: Record<BlockType, BlockDefinition> = {
 }
 
 export const CHUNK_SIZE = 16
-export const CHUNK_HEIGHT = 32
+export const CHUNK_HEIGHT = 64

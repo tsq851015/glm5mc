@@ -92,11 +92,18 @@ export class PlayerController {
       if (!this.isLocked) return
 
       if (e.button === 0) {
-        // 左键 - 检查是否为武器/工具攻击或挖掘方块
+        // 左键 - 攻击或挖掘方块
         const selectedItem = this.inventory.getSelectedItem()
-        if (selectedItem && (selectedItem.type === 'weapon' || selectedItem.type === 'tool')) {
-          // 武器或工具 - 执行攻击
+        
+        if (selectedItem && selectedItem.type === 'weapon') {
+          // 武器 - 只执行攻击
           this.handleAttack(selectedItem)
+        } else if (selectedItem && selectedItem.type === 'tool') {
+          // 工具 - 尝试攻击敌人，如果没有敌人则挖掘方块
+          const result = this.handleAttack(selectedItem)
+          if (!result.hit) {
+            this.handleBlockBreak()
+          }
         } else {
           // 方块或空 - 挖掘方块
           this.handleBlockBreak()
@@ -130,7 +137,7 @@ export class PlayerController {
   }
 }
 
-  private handleAttack(selectedItem: InventoryItem): void {
+  private handleAttack(selectedItem: InventoryItem): { hit: boolean } {
   const weapon = this.weapons.get(selectedItem.id as WeaponType)
   const currentTime = performance.now() / 1000
 
@@ -143,8 +150,10 @@ export class PlayerController {
       if (result.damage > 0) {
         this.combatSystem.showDamageNumber(result.position, result.damage)
       }
+      return { hit: true }
     }
   }
+  return { hit: false }
 }
 
   private handleBlockPlace(): void {
@@ -245,7 +254,15 @@ export class PlayerController {
     }
 
     // 应用垂直移动
-    currentPos.y += this.verticalVelocity * deltaTime
+    const newY = currentPos.y + this.verticalVelocity * deltaTime
+
+    // 检查头部碰撞
+    if (this.verticalVelocity > 0 && this.checkHeadCollision(currentPos.x, newY, currentPos.z)) {
+      // 向上移动时头部撞到方块，停止上升
+      this.verticalVelocity = 0
+    } else {
+      currentPos.y = newY
+    }
 
     // 防止掉出世界底部
     if (currentPos.y < 1) {
@@ -294,6 +311,13 @@ export class PlayerController {
     }
 
     return false // 无碰撞
+  }
+
+  // 检测头部碰撞（防止相机进入方块）
+  private checkHeadCollision(x: number, y: number, z: number): boolean {
+    const headY = Math.floor(y)
+    const block = this.world.getBlock(Math.floor(x), headY, Math.floor(z))
+    return block !== 0 && block !== undefined
   }
 
   getPosition(): THREE.Vector3 {

@@ -149,3 +149,26 @@ canvas {
   z-index: 100;
   transition: opacity 0.5s ease;
 }
+
+/* 时间显示 */
+.time-display {
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(0,0,0,0.7);
+  padding: 8px 16px;
+  border-radius: 5px;
+}
+
+.time-text {
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: monospace;
+}
+
+.phase-icon {
+  font-size: 20px;
+}

@@ -19,9 +19,11 @@ class UndergroundGame extends Game {
   private hud!: HUD
   private world!: World
   private enemySpawner!: EnemySpawner
-  private isSaveLoaded: boolean = false
 
   protected override update(deltaTime: number): void {
+    // 更新昼夜循环
+    this.getDayNightCycle().update(deltaTime)
+
     if (this.playerController) {
       this.playerController.update(deltaTime)
 
@@ -44,6 +46,10 @@ class UndergroundGame extends Game {
           this.playerController.getHealth(),
           this.playerController.getMaxHealth()
         )
+
+        // 更新时间显示
+        const dayNightCycle = this.getDayNightCycle()
+        this.hud.updateTime(dayNightCycle.getTimeString(), dayNightCycle.isNightTime())
       }
     }
 
@@ -86,8 +92,8 @@ class UndergroundGame extends Game {
       },
       health: this.playerController.getHealth(),
       inventory: this.playerController.getInventory().getHotbar()
-        .filter(item => item !== null)
-        .map(item => item!.blockType)
+        .filter((item) => item !== null && item.blockType !== undefined)
+        .map((item) => item.blockType as BlockType)
     }
 
     // 转换修改方块的 Map 为数组
@@ -97,7 +103,7 @@ class UndergroundGame extends Game {
     }
 
     // 收集敌人数据
-    const enemies = this.enemySpawner.getEnemies().map(e => e.toSaveData())
+    const enemies = this.enemySpawner.getEnemies().map((e) => e.toSaveData())
 
     const saveData: SaveData = {
       version: '1.0',
@@ -157,14 +163,12 @@ class UndergroundGame extends Game {
       }
     }
 
-    this.isSaveLoaded = true
     console.log(`Game loaded from slot ${slot}`)
     return true
   }
 
   getAutoSave() {
-    // 返回基类中的 autoSave 实例（需要将 Game 类中的 autoSave 设为 protected）
-    return (this as any).autoSave
+    return this.autoSave
   }
 }
 
@@ -172,8 +176,8 @@ const game = new UndergroundGame()
 game.start()
 
 // 生成世界 (先创建世界，用于碰撞检测)
-const world = new World(game.getScene(), () => game.markDirty())
-world.generateInitialChunks(2)
+const world = new World(game.getScene())
+world.generateInitialChunks(4) // 扩大到4个半径的区块 (9x9=81个区块)
 
 // 设置 World 到游戏
 game.setWorld(world)
@@ -181,9 +185,17 @@ game.setWorld(world)
 // Expose world for debugging
 window.world = world
 
-// 设置玩家初始位置
+// 设置玩家初始位置 (在地面上方)
 const camera = game.getCamera()
-camera.position.set(8, 25, 8)
+camera.position.set(32, 50, 32) // 出生在地面，y=50在地表层上方
+
+// 创建敌人生成器
+const enemySpawner = new EnemySpawner(
+  game.getScene(),
+  (x, y, z) => world.getBlock(x, y, z)
+)
+enemySpawner.setIsNightTimeCallback(() => game.getDayNightCycle().isNightTime())
+game.setEnemySpawner(enemySpawner)
 
 // 创建 HUD
 const hud = new HUD()
@@ -194,17 +206,10 @@ const playerController = new PlayerController(
   camera,
   world,
   game.getScene(),
-  () => game.markDirty(), // 传递 markDirty 回调
-  () => enemySpawner.getEnemies() // �回调获取敌人列表
+  () => game.markDirty(), // onDirty
+  () => enemySpawner.getEnemies() // getEnemies
 )
 game.setPlayerController(playerController)
-
-// 创建敌人生成器
-const enemySpawner = new EnemySpawner(
-  game.getScene(),
-  (x, y, z) => world.getBlock(x, y, z)
-)
-game.setEnemySpawner(enemySpawner)
 
 console.log('Underground Explorer started!')
 console.log('WASD 移动 | 空格 跳跃 | Shift 快速下降')

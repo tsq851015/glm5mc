@@ -5,12 +5,14 @@ export class HUD {
   private hotbarSlots: HTMLElement[] = []
   private instructions: HTMLElement
   private crosshair: HTMLElement
+  private timeDisplay: HTMLElement
 
   constructor() {
     this.createHUD()
     this.healthFill = document.getElementById('health-fill')!
     this.instructions = document.getElementById('instructions')!
     this.crosshair = document.getElementById('crosshair')!
+    this.timeDisplay = document.getElementById('time-display')!
 
     // 初始化快捷栏
     for (let i = 1; i <= 6; i++) {
@@ -26,6 +28,12 @@ export class HUD {
     hudContainer.innerHTML = `
       <!-- 准心 -->
       <div id="crosshair" class="crosshair"></div>
+
+      <!-- 时间显示 -->
+      <div id="time-display" class="hud time-display">
+        <span id="time-text" class="time-text">12:00</span>
+        <span id="phase-icon" class="phase-icon">☀️</span>
+      </div>
 
       <!-- 生命条 -->
       <div class="hud health-bar">
@@ -51,6 +59,16 @@ export class HUD {
       </div>
     `
     document.body.appendChild(hudContainer)
+  }
+
+  updateTime(timeString: string, isNight: boolean): void {
+    if (!this.timeDisplay) return
+
+    const timeText = this.timeDisplay.querySelector('#time-text') as HTMLElement
+    const phaseIcon = this.timeDisplay.querySelector('#phase-icon') as HTMLElement
+
+    if (timeText) timeText.textContent = timeString
+    if (phaseIcon) phaseIcon.textContent = isNight ? '🌙' : '☀️'
   }
 
   setHealth(health: number, maxHealth: number = 100): void {

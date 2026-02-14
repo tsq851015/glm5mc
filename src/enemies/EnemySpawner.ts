@@ -20,33 +20,38 @@ export class EnemySpawner {
   private scene: THREE.Scene
   private getBlock: (x: number, y: number, z: number) => BlockType
   private lastSpawnCheck: number = 0
+  private isNightTime: () => boolean = () => false
 
   private spawnConfigs: SpawnConfig[] = [
     {
       type: EntityType.SLIME,
-      minY: 0,
-      maxY: 25,
+      minY: 38,  // 在地表层生成
+      maxY: 50,
       checkEmpty: false,
-      regionSize: 16,
-      maxPerRegion: 3
+      regionSize: 20,
+      maxPerRegion: 4
     },
     {
       type: EntityType.BAT,
-      minY: 10,
-      maxY: 32,
+      minY: 45,  // 在空中生成
+      maxY: 55,
       checkEmpty: true,
-      regionSize: 20,
-      maxPerRegion: 2
+      regionSize: 25,
+      maxPerRegion: 3
     },
     {
       type: EntityType.SKELETON,
-      minY: 0,
-      maxY: 15,
+      minY: 38,  // 在地表层生成
+      maxY: 48,
       checkEmpty: false,
-      regionSize: 32,
-      maxPerRegion: 1
+      regionSize: 30,
+      maxPerRegion: 2
     }
   ]
+
+  setIsNightTimeCallback(callback: () => boolean): void {
+    this.isNightTime = callback
+  }
 
   constructor(
     scene: THREE.Scene,
@@ -57,6 +62,9 @@ export class EnemySpawner {
   }
 
   update(currentTime: number, playerPosition: THREE.Vector3): void {
+    // 只在夜晚生成敌人
+    if (!this.isNightTime()) return
+
     // Check spawn every 5 seconds
     if (currentTime - this.lastSpawnCheck < 5000) return
     this.lastSpawnCheck = currentTime
@@ -147,6 +155,18 @@ export class EnemySpawner {
         return
     }
 
+    // 设置World引用，用于地面检测
+    enemy.setWorld({ getBlock: this.getBlock })
+
+    // 对于非飞行敌人，立即调整到地面高度
+    if (type !== EntityType.BAT) {
+      const groundLevel = enemy['findGroundLevel']()
+      if (groundLevel > 0) {
+        enemy['position'].y = groundLevel
+        enemy['mesh'].position.y = groundLevel
+      }
+    }
+
     this.enemies.push(enemy)
   }
 
@@ -157,7 +177,9 @@ export class EnemySpawner {
   updateEnemies(deltaTime: number, playerPosition: THREE.Vector3, onPlayerHit: (damage: number) => void): void {
     const currentTime = performance.now()
 
-    for (const enemy of this.enemies) {
+    for (let i = this.enemies.length - 1; i >= 0; i--) {
+      const enemy = this.enemies[i]
+
       if (enemy.isAlive()) {
         enemy.update(deltaTime, playerPosition)
 
@@ -166,10 +188,17 @@ export class EnemySpawner {
         if (damage > 0) {
           onPlayerHit(damage)
         }
+
+        // 检查敌人是否刚刚死亡
+        if (!enemy.isAlive()) {
+          // 触发死亡动画
+          enemy.animateDeath(this.scene)
+        }
       }
     }
 
-    this.enemies = this.enemies.filter(e => e.isAlive() || !e.isAlive())
+    // 清理已完成死亡动画的敌人（已经被dispose的）
+    // 注意：我们保留死亡中的敌人直到动画完成
   }
 
   dispose(): void {

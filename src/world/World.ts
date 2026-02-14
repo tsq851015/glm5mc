@@ -11,22 +11,13 @@ interface LayerConfig {
   ores?: { type: BlockType; chance: number }[]
 }
 
-
-  private onDirty?: () => void
-
-  constructor(scene: THREE.Scene, onDirty?: () => void) {
-    this.scene = scene
-    this.onDirty = onDirty
-    this.noise2D = createNoise2D()
-    this.noise3D = createNoise3D()
-  }
-
 export class World {
   private scene: THREE.Scene
   private chunks: Map<string, Chunk> = new Map()
   private noise2D: ReturnType<typeof createNoise2D>
   private noise3D: ReturnType<typeof createNoise3D>
   private modifiedBlocks: Map<string, BlockType> = new Map()
+  private onDirty?: () => void
 
   // Noise parameters
   private readonly caveNoiseScale = 0.1
@@ -60,7 +51,10 @@ export class World {
       ]
     },
     { minY: 22, maxY: 28, baseBlock: BlockType.GRAVEL },
-    { minY: 28, maxY: 32, baseBlock: BlockType.DIRT },
+    { minY: 28, maxY: 35, baseBlock: BlockType.DIRT },
+    { minY: 35, maxY: 40, baseBlock: BlockType.DIRT },
+    // 地表层（草地）
+    { minY: 40, maxY: 45, baseBlock: BlockType.DIRT },
   ]
 
   constructor(scene: THREE.Scene) {

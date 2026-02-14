@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { Time } from './Time'
 import { SaveManager } from '../save/SaveManager'
 import { AutoSave } from '../save/AutoSave'
-import { SaveData, PlayerSaveData, ModifiedBlock } from '../save/SaveData'
+import { DayNightCycle } from './DayNightCycle'
 
 export class Game {
   private scene: THREE.Scene
@@ -12,11 +12,15 @@ export class Game {
   private isRunning: boolean = false
   protected saveManager: SaveManager
   protected autoSave: AutoSave
+  protected dayNightCycle: DayNightCycle
 
   constructor() {
     // 初始化场景
     this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color(0x1a1a2e)
+    // 天空渐变色（从地平线到天顶）
+    this.scene.background = new THREE.Color(0x87ceeb) // 天空蓝
+    // 添加雾效，营造深度感
+    this.scene.fog = new THREE.Fog(0x87ceeb, 50, 150)
 
     // 初始化相机
     this.camera = new THREE.PerspectiveCamera(
@@ -40,6 +44,9 @@ export class Game {
     this.saveManager = new SaveManager()
     this.autoSave = new AutoSave(this.saveManager)
 
+    // 初始化昼夜循环系统
+    this.dayNightCycle = new DayNightCycle(this.scene)
+
     // 初始化保存系统
     this.saveManager.init().then(() => {
       console.log('Save system initialized')
@@ -58,20 +65,12 @@ export class Game {
       }
     })
 
-    // 设置灯光
-    this.setupLights()
+    // 初始化场景背景
+    this.scene.background = new THREE.Color(0x87ceeb) // 初始天空蓝
+    this.scene.fog = new THREE.Fog(0x87ceeb, 50, 150)
 
     // 监听窗口大小变化
     window.addEventListener('resize', this.onResize.bind(this))
-  }
-
-  private setupLights(): void {
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
-    this.scene.add(ambientLight)
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
-    directionalLight.position.set(10, 20, 10)
-    this.scene.add(directionalLight)
   }
 
   private onResize(): void {
@@ -103,21 +102,18 @@ export class Game {
     requestAnimationFrame((t) => this.gameLoop(t))
   }
 
-  async saveGame(slot: number = 0): Promise<boolean> {
+  getDayNightCycle(): DayNightCycle {
+    return this.dayNightCycle
+  }
+
+  async saveGame(_slot: number = 0): Promise<boolean> {
     console.log('saveGame called - override in subclass')
     return false
   }
 
-  async loadGame(slot: number = 0): Promise<boolean> {
+  async loadGame(_slot: number = 0): Promise<boolean> {
     console.log('loadGame called - override in subclass')
     return false
-  }
-
-    // Restore blocks
-    // TODO: Apply modifiedBlocks to World
-
-    console.log(`Game loaded from slot ${slot}`)
-    return true
   }
 
   async checkAutoSave(): Promise<void> {

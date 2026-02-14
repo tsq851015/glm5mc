@@ -41,14 +41,15 @@ export class BlockInteraction {
     const direction = new THREE.Vector3()
     this.camera.getWorldDirection(direction)
 
-    const step = 0.1
+    const step = 0.05  // Smaller step for better precision
     const maxDistance = this.reachDistance
     const playerPos = this.camera.position.clone()
+    const epsilon = 0.001  // Small offset to prevent edge cases
 
     let prevPos = playerPos.clone()
 
     for (let d = 0; d < maxDistance; d += step) {
-      const current = playerPos.clone().add(direction.clone().multiplyScalar(d))
+      const current = playerPos.clone().add(direction.clone().multiplyScalar(d + epsilon))
 
       const blockX = Math.floor(current.x)
       const blockY = Math.floor(current.y)
