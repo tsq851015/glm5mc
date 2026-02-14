@@ -16,6 +16,7 @@ export class World {
   private chunks: Map<string, Chunk> = new Map()
   private noise2D: ReturnType<typeof createNoise2D>
   private noise3D: ReturnType<typeof createNoise3D>
+  private modifiedBlocks: Map<string, BlockType> = new Map()
 
   // Noise parameters
   private readonly caveNoiseScale = 0.1
@@ -168,6 +169,18 @@ export class World {
       return
     }
 
+    // Get original block before modification
+    const originalBlock = chunk.getBlock(localX, worldY, localZ)
+
+    // Track modification if different from original
+    const key = `${worldX},${worldY},${worldZ}`
+    if (type !== originalBlock) {
+      this.modifiedBlocks.set(key, type)
+    } else {
+      // Remove from tracking if restored to original
+      this.modifiedBlocks.delete(key)
+    }
+
     chunk.setBlock(localX, worldY, localZ, type)
     chunk.generateMesh(this.scene)
 
@@ -183,6 +196,14 @@ export class World {
     if (chunk) {
       chunk.generateMesh(this.scene)
     }
+  }
+
+  getModifiedBlocks(): Map<string, BlockType> {
+    return this.modifiedBlocks
+  }
+
+  clearModifiedBlocks(): void {
+    this.modifiedBlocks.clear()
   }
 
   dispose(): void {
