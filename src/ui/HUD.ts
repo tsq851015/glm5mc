@@ -58,6 +58,16 @@ export class HUD {
     this.healthFill.style.width = `${percentage}%`
   }
 
+  updateHealthBar(current: number, max: number): void {
+    if (!this.healthFill) return
+
+    const percentage = (current / max) * 100
+    const color = percentage > 50 ? '#44ff44' : percentage > 25 ? '#ffff44' : '#ff4444'
+
+    this.healthFill.style.width = `${percentage}%`
+    this.healthFill.style.backgroundColor = color
+  }
+
   setActiveSlot(index: number): void {
     this.hotbarSlots.forEach((slot, i) => {
       slot.classList.toggle('active', i === index)

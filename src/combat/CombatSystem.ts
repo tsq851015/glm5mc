@@ -105,4 +105,42 @@ export class CombatSystem {
     }
     animate()
   }
+
+  showDamageNumber(position: THREE.Vector3, damage: number): void {
+    const element = document.createElement('div')
+    element.textContent = `-${damage}`
+    element.style.cssText = `
+      position: absolute;
+      color: #ff4444;
+      font-weight: bold;
+      font-size: 18px;
+      pointer-events: none;
+      text-shadow: 1px 1px 2px black;
+    `
+
+    // Convert 3D position to screen coordinates
+    // TODO: Implement projection in next task
+
+    document.body.appendChild(element)
+
+    // Animate floating up and fade out
+    let opacity = 1.0
+    let offsetY = 0
+    const animate = () => {
+      opacity -= 0.02
+      offsetY += 1
+
+      if (element.style) {
+        element.style.opacity = opacity.toString()
+        element.style.transform = `translateY(${-offsetY}px)`
+      }
+
+      if (opacity > 0) {
+        requestAnimationFrame(animate)
+      } else {
+        document.body.removeChild(element)
+      }
+    }
+    requestAnimationFrame(animate)
+  }
 }
