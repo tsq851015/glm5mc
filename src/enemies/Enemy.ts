@@ -17,6 +17,8 @@ export class Enemy {
   protected isDead: boolean = false
   private lastAttackTime: number = 0
   private attackCooldown: number = 1000 // 1 second
+  private deathAnimationTime: number = 0
+  private isAnimatingDeath: boolean = false
 
   constructor(type: EntityType, position: THREE.Vector3, scene: THREE.Scene) {
     this.type = type
@@ -101,6 +103,42 @@ export class Enemy {
     }
 
     return 0
+  }
+
+  animateDeath(scene: THREE.Scene): void {
+    if (this.isAnimatingDeath) return
+
+    this.isAnimatingDeath = true
+    this.deathAnimationTime = performance.now()
+
+    const duration = 500 // ms
+    const startScale = this.mesh.scale.clone()
+
+    const animate = () => {
+      const elapsed = performance.now() - this.deathAnimationTime
+      const progress = elapsed / duration
+
+      if (progress < 1) {
+        // Shrink and fade
+        const scale = 1 - progress
+        this.mesh.scale.set(
+          startScale.x * scale,
+          startScale.y * (1 - progress * 0.5), // Flatten
+          startScale.z * scale
+        )
+
+        // Rotate
+        this.mesh.rotation.y += 0.1
+
+        ;(this.mesh.material as THREE.MeshStandardMaterial).opacity = 1 - progress
+
+        requestAnimationFrame(animate)
+      } else {
+        // Animation complete
+        this.dispose(scene)
+      }
+    }
+    requestAnimationFrame(animate)
   }
 
   dispose(scene: THREE.Scene): void {
