@@ -155,14 +155,21 @@ export class EnemySpawner {
     return this.enemies
   }
 
-  updateEnemies(deltaTime: number, playerPosition: THREE.Vector3): void {
+  updateEnemies(deltaTime: number, playerPosition: THREE.Vector3, onPlayerHit: (damage: number) => void): void {
+    const currentTime = performance.now()
+
     for (const enemy of this.enemies) {
       if (enemy.isAlive()) {
         enemy.update(deltaTime, playerPosition)
+
+        // Check if enemy attacks player
+        const damage = enemy.attack(currentTime, playerPosition)
+        if (damage > 0) {
+          onPlayerHit(damage)
+        }
       }
     }
 
-    // Remove dead enemies (cleanup handled elsewhere)
     this.enemies = this.enemies.filter(e => e.isAlive() || !e.isAlive())
   }
 

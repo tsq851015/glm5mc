@@ -15,6 +15,8 @@ export class Enemy {
   protected mesh: THREE.Mesh
   protected position: THREE.Vector3
   protected isDead: boolean = false
+  private lastAttackTime: number = 0
+  private attackCooldown: number = 1000 // 1 second
 
   constructor(type: EntityType, position: THREE.Vector3, scene: THREE.Scene) {
     this.type = type
@@ -84,6 +86,21 @@ export class Enemy {
 
   getAttackRange(): number {
     return this.stats.attackRange
+  }
+
+  canAttack(currentTime: number): boolean {
+    return currentTime - this.lastAttackTime >= this.attackCooldown
+  }
+
+  attack(currentTime: number, playerPosition: THREE.Vector3): number {
+    const distance = this.position.distanceTo(playerPosition)
+
+    if (distance <= this.stats.attackRange && this.canAttack(currentTime)) {
+      this.lastAttackTime = currentTime
+      return this.stats.damage
+    }
+
+    return 0
   }
 
   dispose(scene: THREE.Scene): void {
